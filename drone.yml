@@ -1,24 +1,16 @@
-kind: pipeline
-name: default
-workspace:
-  base: /go
-  path: src/github.com/yourname/go-drone-hello-world
-steps:
-  - name: test
-    image: golang
+pipeline:
+  build:
+    image: hseeberger/scala-sbt:8u171_2.12.6_1.1.6
     commands:
-      - go get
-      - go test
-  - name: build
-    image: golang
-    commands:
-      - go get
-      - go build -o output
-      - chmod +x output
-  - name: run
-    image: golang
-    commands:
-      - go get
-      - go build -o output
-      - chmod +x output
-      - ./output
+      - sbt test
+
+  slack:
+    image: plugins/slack
+    secrets: [ plugin_webhook ]
+    channel: 'daf-devel'
+    template: >
+      {{#success build.status}}
+        build {{build.number}} for repo {{repo.name}} by {{build.author}} succeeded!
+      {{else}}
+        build {{build.number}} for repo {{repo.name}} by {{build.author}} failed! 
+      {{/success}}
