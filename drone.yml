@@ -1,16 +1,31 @@
-pipeline:
-  build:
-    image: hseeberger/scala-sbt:8u171_2.12.6_1.1.6
-    commands:
-      - sbt test
+name: default
 
-  slack:
-    image: plugins/slack
-    secrets: [ plugin_webhook ]
-    channel: 'daf-devel'
-    template: >
-      {{#success build.status}}
-        build {{build.number}} for repo {{repo.name}} by {{build.author}} succeeded!
-      {{else}}
-        build {{build.number}} for repo {{repo.name}} by {{build.author}} failed! 
-      {{/success}}
+kind: pipeline
+type: docker
+
+steps:
+- name: backend
+  image: golang
+  commands:
+    - go get
+    - go build
+    - go test
+
+- name: frontend
+  image: node:6
+  commands:
+    - npm install
+    - npm test
+
+- name: publish
+  image: plugins/docker
+  settings:
+    repo: octocat/hello-world
+    tags: [ 1, 1.1, latest ]
+    registry: index.docker.io
+
+- name: notify
+  image: plugins/slack
+  settings:
+    channel: developers
+    username: drone
